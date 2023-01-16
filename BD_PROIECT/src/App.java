@@ -1287,4 +1287,163 @@ public class App {
             System.err.println("SqlExceptionstergeProgramare" + exception);
         }
     }
+
+    public void stergeCabinet(String id) {
+        String query="call stergeCabinet(\'"+id+"\');";
+        try{
+            Statement statement=connection.createStatement();
+            statement.executeUpdate(query);
+        }catch (SQLException exception) {
+            System.err.println("SqlExceptionstergeCabinet" + exception);
+        }
+    }
+
+    public List<CabinetField> getCabinete() {
+        String query="select * from veziCabinete;";
+        List<CabinetField>list=new ArrayList<>();
+        try{
+            Statement statement=connection.createStatement();
+            ResultSet resultSet=statement.executeQuery(query);
+            while(resultSet.next()){
+                list.add(
+                        new CabinetField(resultSet.getObject(1).toString(),
+                                resultSet.getObject(2).toString(),
+                                resultSet.getObject(3).toString(),
+                                resultSet.getObject(4).toString())
+                );
+            }
+            return list;
+        }catch(SQLException exception){
+            System.err.println("SqlExceptiongetCabinete" + exception);
+            return null;
+        }
+    }
+
+    public List<ServiciuField> getServiciiAdaugaCabinete(String unitatiComboBox) {
+        List<ServiciuField>list=new ArrayList<>();
+        String query="call cautaServUnitate(\'"+unitatiComboBox+"\');";
+        try{
+            Statement statement=connection.createStatement();
+            ResultSet resultSet=statement.executeQuery(query);
+            while(resultSet.next()){
+                list.add(new ServiciuField(resultSet.getObject(1).toString(),
+                        resultSet.getObject(2).toString(),
+                        resultSet.getObject(3).toString()
+                       ));
+            }
+            return list;
+        }catch(SQLException exception){
+            System.err.println("SqlExceptiongetServiciiAdaugaCabinetee" + exception);
+            return null;
+        }
+    }
+    public List<RepartizareField> getRepartizari(){
+        List<RepartizareField>list=new ArrayList<>();
+        String query="call repartizare();";
+        try{
+            Statement statement=connection.createStatement();
+            ResultSet resultSet=statement.executeQuery(query);
+            while(resultSet.next()){
+                if(resultSet.getMetaData().getColumnCount()==1){
+                list.add(
+                        new RepartizareField(resultSet.getObject(1).toString())
+                );}else{
+                    list.add(
+                            new RepartizareField(resultSet.getObject(1).toString(),
+                                    resultSet.getObject(2).toString(),
+                                    resultSet.getObject(3).toString(),
+                                    resultSet.getObject(4).toString(),
+                                    resultSet.getObject(5).toString())
+                    );
+                }
+            }
+            return list;
+        }catch(SQLException exception){
+            System.err.println("SqlExceptiongetRepartizari" + exception);
+            return null;
+        }
+    }
+
+    public void addCabinet(String id_unitate,List<ServiciuField> list) {
+        String query="insert into cabinet(id_unitate) values (\'"+id_unitate+"\');";
+        try{
+            Statement statement=connection.createStatement();
+            statement.executeUpdate(query);
+        }catch(SQLException exception){
+            System.err.println("SqlExceptionaddCabinet1" + exception);
+        }
+        String id_cabinet="";
+        query="select MAX(id_cabinet) from cabinet;";
+        try{
+            Statement statement=connection.createStatement();
+            ResultSet resultSet=statement.executeQuery(query);
+            resultSet.next();
+            id_cabinet=resultSet.getObject(1).toString();
+        }catch(SQLException exception){
+            System.err.println("SqlExceptionaddCabinet2" + exception);
+        }
+
+        for(int i=0;i<list.size();i++){
+            ServiciuField x=list.get(i);
+            String id_serviciu=x.getId_serviciu();
+            String query0="insert into serviciu_cabinet(id_cabinet,id_serviciu) values (\'"+id_cabinet+"\',\'"+id_serviciu+"\');";
+            try{
+                Statement statement=connection.createStatement();
+                statement.executeUpdate(query0);
+            }catch(SQLException exception){
+                System.err.println("SqlExceptionaddCabinet3" + exception);
+            }
+        }
+    }
+
+    public List<RecuzitaField> getRecuzita() {
+        List<RecuzitaField>list=new ArrayList<>();
+        String query="select * from getRecuzita;";
+        try{
+            Statement statement=connection.createStatement();
+            ResultSet resultSet=statement.executeQuery(query);
+            while(resultSet.next()){
+                list.add(
+                  new RecuzitaField(resultSet.getObject(1).toString(),
+                          resultSet.getObject(2).toString(),
+                          resultSet.getObject(3).toString(),
+                          resultSet.getObject(4).toString(),
+                          resultSet.getObject(5).toString())
+                );
+            }
+            return list;
+        }catch(SQLException exception){
+            System.err.println("SqlExceptiongetRecuzita" + exception);
+            return null;
+        }
+    }
+
+    public void addRecuzita(String id_serviciu, String result) {
+        String query="insert into recuzita(id_serviciu,denumire) values(\'"+id_serviciu+"\',\'"+result+"\');";
+        try{
+            Statement statement=connection.createStatement();
+            statement.executeUpdate(query);
+        }catch(SQLException exception){
+            System.err.println("SqlExceptionaddRecuzita" + exception);
+        }
+    }
+
+    public void deleteRecuzita(String id_recuzita) {
+        String query="delete from recuzita where id_recuzita=\'"+id_recuzita+"\';";
+        try{
+            Statement statement=connection.createStatement();
+            statement.executeUpdate(query);
+        }catch(SQLException exception){
+            System.err.println("SqlExceptiondeleteRecuzita" + exception);
+        }
+    }
+    public void deleteConcediu(String id_angajat, String data_concediu) {
+        String query = "delete from concediu where id_angajat=\'" + id_angajat + "\' and zi_concediu=\'" + data_concediu + "\';";
+        try {
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(query);
+        } catch (SQLException exception) {
+            System.err.println("SqlExceptiondeleteConcediu" + exception);
+        }
+    }
 }

@@ -22,6 +22,7 @@ public class Specializare {
         durata[4]=durata4;
         grad=newgrad;
         nrCompetente=5;
+        denumire=newdenumire;
     }
     public Specializare(String newdenumire,String newgrad,String competenta0,String durata0,String competenta1,String durata1,String competenta2,String durata2,String competenta3,String durata3) {
         competenta[0]=competenta0;
@@ -34,6 +35,7 @@ public class Specializare {
         durata[3]=durata3;
         grad=newgrad;
         nrCompetente=4;
+        denumire=newdenumire;
     }
     public Specializare(String newdenumire,String newgrad,String competenta0,String durata0,String competenta1,String durata1,String competenta2,String durata2) {
         competenta[0]=competenta0;

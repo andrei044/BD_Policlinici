@@ -412,7 +412,7 @@ public class CreateUserPanel extends JPanel {
         if(telField.getText().equals("")|| telField.getText().matches(".*[a-z].*") || telField.getText().length()>12)return false;
         if(!getFunctie().equals("Pacient")){
             if(getDataAngajare()==null)return false;
-            if(IBANField.getText().equals("") || IBANField.getText().length()!=34)return false;
+            if(IBANField.getText().equals("") || IBANField.getText().length()!=24)return false;
             if(!getFunctie().equals("Medic") && (salariuBrutField.getText().matches(".*[a-z].*") || salariuBrutField.getText().equals("")))return false;
             if(getFunctie().equals("Medic")){
                 if(nr_specializari==0)return false;

@@ -98,11 +98,24 @@ create table raport(id_raport int auto_increment primary key, istoric_raport var
 alter table istoric add foreign key (id_raport)references raport(id_raport);
 alter table istoric add foreign key(id_analize)references analize(id_analize);
 
-
 #factura
 create table factura(id_factura int, id_receptioner int, data_factura timestamp);
 alter table factura add foreign key (id_factura) references istoric(id_istoric);
 alter table factura add foreign key (id_receptioner) references angajat(id_angajat);
+
+#cabinet
+create table cabinet(id_cabinet int auto_increment primary key, id_unitate int);
+alter table cabinet add foreign key (id_unitate) references unitate(id_unitate);
+
+#serviciu_cabinet
+create table serviciu_cabinet(id_cabinet int, id_serviciu int);
+alter table serviciu_cabinet add foreign key (id_cabinet) references cabinet(id_cabinet);
+alter table serviciu_cabinet add foreign key (id_serviciu) references serviciu_medical(id_serviciu);
+
+#recuzita
+create table recuzita(id_recuzita int auto_increment primary key,id_serviciu int,denumire varchar(30));
+alter table recuzita add foreign key (id_serviciu) references serviciu_medical(id_serviciu); 
+
 
 insert into date_user(nume,prenume,CNP,adresa,tel, email) values ('Gigel','Popescu','1111111111002','Aleea Lalelelor Nr 12', '+40232025010','gigelp@mymail.com');
 insert into angajat(id_angajat,IBAN,functie,data_angajare) values (1,'1321','admin','2022-01-10');
@@ -706,6 +719,140 @@ BEGIN
 END //
 DELIMITER ;
 
+DROP VIEW IF EXISTS veziCabinete;
+DELIMITER //
+CREATE VIEW veziCabinete AS
+	select cabinet.id_unitate, cabinet.id_cabinet, competenta.denumire_competenta,CONCAT(date_user.nume,' ',date_user.prenume)AS NUME_MEDIC from cabinet
+    join serviciu_cabinet on cabinet.id_cabinet=serviciu_cabinet.id_cabinet
+    join competenta on serviciu_cabinet.id_serviciu=competenta.id_competenta join specializare on competenta.id_specializare=specializare.id_specializare
+    join date_user on date_user.id_user=specializare.id_medic order by cabinet.id_unitate,cabinet.id_cabinet;
+	
+//
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS stergeCabinet;
+DELIMITER //
+CREATE PROCEDURE stergeCabinet(IN idCabinet int)
+BEGIN
+    delete from serviciu_cabinet where id_cabinet=idCabinet;
+    delete from cabinet where id_cabinet=idCabinet;
+END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS cautaServUnitate;
+DELIMITER //
+CREATE PROCEDURE cautaServUnitate(IN idUnitate int)
+BEGIN
+    select serviciu_medical.id_serviciu,competenta.denumire_competenta,CONCAT(date_user.nume,' ',date_user.prenume)AS NUME_MEDIC from serviciu_medical
+    join competenta on serviciu_medical.id_serviciu=competenta.id_competenta join specializare on competenta.id_specializare=specializare.id_specializare
+	join date_user on date_user.id_user=specializare.id_medic join program_angajat_generic on program_angajat_generic.id_angajat=date_user.id_user
+    where program_angajat_generic.mon_id_unitate=idUnitate
+    UNION
+    select serviciu_medical.id_serviciu,competenta.denumire_competenta,CONCAT(date_user.nume,' ',date_user.prenume)AS NUME_MEDIC from serviciu_medical
+    join competenta on serviciu_medical.id_serviciu=competenta.id_competenta join specializare on competenta.id_specializare=specializare.id_specializare
+	join date_user on date_user.id_user=specializare.id_medic join program_angajat_specific on program_angajat_specific.id_angajat=date_user.id_user
+    where program_angajat_specific.id_unitate=idUnitate;
+END //
+DELIMITER ;
+
+
+
+DROP PROCEDURE IF EXISTS repartizare;
+DELIMITER //
+CREATE PROCEDURE repartizare()
+BEGIN
+	SET @current_id_cabinet=NULL;
+    create table temp_cabinete(id_cabinet int,id_unitate int);
+    insert into temp_cabinete(id_cabinet,id_unitate) select * from cabinet;
+    create table temp_repartizare(id_unitate int,id_cabinet int, id_medic int, timp_start time, timp_stop time);
+    create table temp_programari_ramase(id_programare int,programare_start time,programare_stop time);
+    create table temp_programari_ziua_curenta(id_programare int,programare_start time,programare_stop time,id_serviciu int);
+    insert into temp_programari_ziua_curenta(id_programare,programare_start,programare_stop,id_serviciu)
+    select id_programare,programare_start,programare_stop,id_serviciu from programare where programare.data_programare=CURDATE();
+    while (select @current_id_cabinet:=id_cabinet from temp_cabinete limit 1)is not null DO
+		create table temp_serviciu_cabinet(id_serviciu int);
+        insert into temp_serviciu_cabinet(id_serviciu) select id_serviciu from serviciu_cabinet where id_cabinet=@current_id_cabinet;
+        SET @current_id_serviciu=NULL;
+        while (select @current_id_serviciu:=id_serviciu from temp_serviciu_cabinet limit 1) is not null DO
+			if((select id_programare from temp_programari_ziua_curenta where temp_programari_ziua_curenta.id_serviciu=@current_id_serviciu limit 1)is not null )then
+				create table temp_programare(id_programare int,programare_start time, programare_stop time);
+                insert into temp_programare(id_programare,programare_start, programare_stop) select id_programare,programare_start,programare_stop from temp_programari_ziua_curenta where id_serviciu=@current_id_serviciu;
+                SET @current_id_programare=NULL;
+                while( (select @current_id_programare:=id_programare from temp_programare limit 1)is not null) DO
+					if( (select id_cabinet from temp_repartizare 
+                    where id_cabinet=@current_id_cabinet AND ((timp_start<=(select programare_start from temp_programare where id_programare=@current_id_programare limit 1) AND
+                    timp_stop>=(select programare_start from temp_programare where id_programare=@current_id_programare limit 1)) OR
+                     (timp_start<=(select programare_stop from temp_programare where id_programare=@current_id_programare limit 1) AND
+                    timp_stop>=(select programare_stop from temp_programare where id_programare=@current_id_programare limit 1)) OR
+                    (timp_start>=(select programare_start from temp_programare where id_programare=@current_id_programare limit 1) AND
+                    timp_stop<=(select programare_stop from temp_programare where id_programare=@current_id_programare limit 1))  )
+                    limit 1) is null )then
+						insert into temp_repartizare(id_unitate,id_cabinet, id_medic, timp_start, timp_stop)values
+                        ((select id_unitate from cabinet where id_cabinet=@current_id_cabinet limit 1),
+                        @current_id_cabinet,
+                        (select specializare.id_medic from specializare join competenta on competenta.id_specializare=specializare.id_specializare join serviciu_cabinet on serviciu_cabinet.id_serviciu=competenta.id_competenta
+                        where serviciu_cabinet.id_serviciu=@current_id_serviciu limit 1),
+                        (select programare_start from temp_programare where id_programare=@current_id_programare limit 1),
+                        (select programare_stop from temp_programare where id_programare=@current_id_programare limit 1)
+                        );
+                        delete from temp_programari_ziua_curenta where id_programare=@current_id_programare;
+                    #else
+						#insert into temp_programari_ramase(id_programare,programare_start,programare_stop)values
+                        #(@current_id_programare,(select programare_start from temp_programare where id_programare=@current_id_programare limit 1),(select programare_stop from temp_programare where id_programare=@current_id_programare limit 1));
+                    end if;
+                    delete from temp_programare where id_programare=@current_id_programare;
+                end while;
+                drop table temp_programare;
+            end if;
+            delete from temp_serviciu_cabinet where id_serviciu=@current_id_serviciu;
+        end while;
+        drop table temp_serviciu_cabinet;
+        delete from temp_cabinete where id_cabinet=@current_id_cabinet;
+       
+    end WHILE;
+    if((select id_programare from temp_programari_ziua_curenta limit 1)is not null)then
+        select temp_programari_ziua_curenta.id_serviciu from temp_programari_ziua_curenta;
+    else
+		#select * from temp_repartizare;
+		select temp_repartizare.id_unitate,CONCAT(temp_repartizare.id_cabinet,'(',GROUP_CONCAT(distinct recuzita.denumire SEPARATOR ', '),')')
+        ,CONCAT(temp_repartizare.id_medic,'(',date_user.nume,' ',prenume,')'), temp_repartizare.timp_start,temp_repartizare.timp_stop
+        from temp_repartizare join date_user on date_user.id_user=temp_repartizare.id_medic join serviciu_cabinet on serviciu_cabinet.id_cabinet=temp_repartizare.id_cabinet
+        join recuzita on serviciu_cabinet.id_serviciu=recuzita.id_serviciu group by temp_repartizare.timp_start,temp_repartizare.timp_stop;
+    end if;
+    drop table temp_cabinete;
+	drop table temp_repartizare;
+	drop table temp_programari_ramase;
+    drop table temp_programari_ziua_curenta;
+END //
+DELIMITER ;
+call repartizare();
+
+
+DROP VIEW IF EXISTS getRecuzita;
+DELIMITER //
+CREATE VIEW getRecuzita AS
+	select recuzita.id_serviciu,competenta.denumire_competenta,CONCAT(date_user.nume,' ',date_user.prenume),recuzita.denumire,recuzita.id_recuzita from
+    recuzita join competenta on competenta.id_competenta=recuzita.id_serviciu join specializare on specializare.id_specializare=competenta.id_specializare
+    join date_user on specializare.id_medic=date_user.id_user;
+//
+DELIMITER ;
+
+insert into serviciu_cabinet(id_cabinet,id_serviciu) values (8,8);
+delete from serviciu_cabinet where id_cabinet=8 and id_serviciu=8;
+insert into cabinet(id_unitate) values (2);
+insert into serviciu_cabinet(id_serviciu,id_cabinet) values (3,7),(5,8);
+insert into serviciu_cabinet(id_serviciu,id_cabinet) values (3,5);
+insert into recuzita(id_serviciu,denumire)values (7,'aparat RMN'),(3,'aparat ecografie'),(1,'aparat2 ecografie'),(4,'aparat radiografie'),(12,'foarfeca'),
+(11,'bisturiu'),(3,'pat special'),(8,'aparat oftalmo');
+
+select * from cabinet;
+select * from serviciu_cabinet;
+select * from serviciu_medical;
+select * from program_angajat_specific;
+select * from recuzita;
+
+select * from veziCabinete;
+
 #---------------------------------------------------------------------------------------------------------------------------------#
 select * from angajat;
 select * from login
@@ -713,6 +860,7 @@ select * from specializare;
 select * from competenta;
 select * from serviciu_medical;
 select id_specializare from specializare where id_medic=2 and denumire_specializare='ge2g2' order by id_specializare DESC;
+
 
 
 
@@ -868,3 +1016,23 @@ select * from pacient;
 -- --     join factura on factura.id_factura=programare.id_programare where factura.data_factura is not null));
 -- //
 -- DELIMITER ;
+DROP VIEW IF EXISTS veziCabinete;
+DELIMITER //
+CREATE VIEW veziCabinete AS
+	select CONCAT(date_user.nume,' ',date_user.prenume)AS NUME_MEDIC,specializare.denumire_specializare,competenta.denumire_competenta,serviciu_cabinet.id_cabinet,cabinet.id_unitate,program_angajat_specific.timp_start,program_angajat_specific.timp_stop from date_user join medic on date_user.id_user=medic.id_medic
+    join specializare on specializare.id_medic=medic.id_medic join competenta on competenta.id_specializare=specializare.id_specializare
+    left join serviciu_cabinet on serviciu_cabinet.id_serviciu=competenta.id_competenta
+    left join cabinet on cabinet.id_cabinet=serviciu_cabinet.id_cabinet
+    left join program_angajat_specific on program_angajat_specific.id_unitate=cabinet.id_unitate AND date_user.id_user=program_angajat_specific.id_angajat
+    //where program_angajat_specific.data_specifica=CURDATE() 
+	/*select cabinet.id_unitate, GROUP_CONCAT(distinct cabinet.id_cabinet SEPARATOR ', ') AS ID_CAB,GROUP_CONCAT(distinct serviciu_cabinet.id_serviciu SEPARATOR ', ') AS SERVICII, program_angajat_specific.timp_start,program_angajat_specific.timp_stop, CONCAT(date_user.nume,' ',date_user.prenume)AS NUME_MEDIC,
+    GROUP_CONCAT(distinct recuzita.denumire SEPARATOR ', ') AS RECUZITA
+    from cabinet join program_angajat_specific on program_angajat_specific.id_unitate=cabinet.id_unitate join serviciu_cabinet on serviciu_cabinet.id_cabinet=cabinet.id_cabinet
+    join competenta on competenta.id_competenta=serviciu_cabinet.id_serviciu left join recuzita on recuzita.id_serviciu=competenta.id_competenta
+    left join specializare on specializare.id_specializare=competenta.id_specializare 
+    left join date_user on date_user.id_user=specializare.id_medic 
+    where program_angajat_specific.data_specifica=CURDATE() group by date_user.nume,date_user.prenume
+    order by cabinet.id_unitate,cabinet.id_cabinet,program_angajat_specific.timp_start,program_angajat_specific.timp_stop;*/
+	
+//
+DELIMITER ;

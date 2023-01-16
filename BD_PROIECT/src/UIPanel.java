@@ -379,4 +379,8 @@ public class UIPanel extends JPanel {
     public StergeProgramarePanel getStergeProgramarePane() {
         return stergeProgramarePane;
     }
+
+    public CabinetePanel getCabinetePanel() {
+        return cabinetePanel;
+    }
 }

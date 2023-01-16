@@ -18,10 +18,17 @@ public class ConcediuField extends JPanel {
         this.add(new JLabel(id_angajat));
         this.add(new JLabel(zi_concediu));
         this.add(stergeButton);
-        stergeButton.setVisible(false);
+        //stergeButton.setVisible(false);
     }
     public void addStergeConcediuListener(ActionListener actionListener){
         stergeButton.addActionListener(actionListener);
     }
 
+    public String getZi_concediu() {
+        return zi_concediu;
+    }
+
+    public String getId_angajat() {
+        return id_angajat;
+    }
 }

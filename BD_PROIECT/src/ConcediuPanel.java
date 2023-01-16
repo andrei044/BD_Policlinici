@@ -85,6 +85,7 @@ public class ConcediuPanel extends JPanel {
             scrollPaneContent.remove(contentSize-1);
             contentSize--;
         }
+
     }
     public void showConcediu(List<ConcediuField> lista) {
         resetContent();

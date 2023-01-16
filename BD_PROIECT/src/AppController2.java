@@ -74,6 +74,21 @@ public class AppController2 {
         appView2.getUiPanel().getDeleteUserCard().addDeleteUserListener(new DeleteListener());
         appView2.getUiPanel().getStergeProgramarePane().addStergeListener(new StergeProgramareListener());
         appView2.getUiPanel().getStergeProgramarePane().addVeziListener(new VeziProgramareListener());
+        appView2.getUiPanel().getCabinetePanel().addCabineteListener(new CabineteListener());
+        appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().addBackCabineteListener(new CabineteBackListener());
+        appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().addStergeCabinetListener(new StergeCabinetListener());
+        appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().addAdaugaCabinetListener(new AdaugaCabinetListener());
+        appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().addVeziServiciiButton(new VeziAdaugaCabineteListener());
+        appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().addVeziButton(new VeziCabineteListener());
+        appView2.getUiPanel().getCabinetePanel().addRepartizareListener(new RepartizareListener());
+        appView2.getUiPanel().getCabinetePanel().getRepartizarePanel().addBackListener(new BackRepartizariListener());
+        appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().addConfirmButtonListener(new ConfirmCabinetListener());
+        appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().addBackServiciiButton(new BackRepartizariListener());
+        appView2.getUiPanel().getCabinetePanel().addRecuzitaListener(new RecuzitaListener());
+        appView2.getUiPanel().getCabinetePanel().getRecuzitaPanel().addBackListener(new BackRepartizariListener());
+        appView2.getUiPanel().getCabinetePanel().getRecuzitaPanel().addSelectListener(new SelectRecuzitaListener());
+        appView2.getUiPanel().getCabinetePanel().getRecuzitaPanel().addDeleteListener(new DeleteRecuzitaListener());
+        appView2.getUiPanel().getCautaAngajatCard().getVeziAngajatPanel().getConcediuPanel().addStergeConcediuListener(new DeleteConcediuListener());
     }
     class SubmitListener implements ActionListener {
         @Override
@@ -455,7 +470,7 @@ public class AppController2 {
                         appView2.getUiPanel().getProgramareCard().getSchedulerPanel().reset();
                     }else{
                         if(JOptionPane.showConfirmDialog((Component) e.getSource(),
-                                "Timp ales:"+appView2.getUiPanel().getProgramareCard().getSchedulerPanel().getMinutes()+"\n"+appView2.getUiPanel().getProgramareCard().getDurataRecomandata()+
+                                "Timp ales:"+appView2.getUiPanel().getProgramareCard().getSchedulerPanel().getMinutes()+"\nTimp recomandat:"+appView2.getUiPanel().getProgramareCard().getDurataRecomandata()+
                                         "\nInterval ales diferit de cel recomandat. Confirmati programarea?"
                                 , "Programare", JOptionPane.YES_NO_OPTION)==0){
                             if(app.insertProgramare(appView2.getUiPanel().getProgramareCard().getId_pacient(),
@@ -660,7 +675,7 @@ public class AppController2 {
     class AdaugaConcediuListener implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
-            if(JOptionPane.showConfirmDialog((Component) e.getSource(), "Suntenti sigur/a ca vreti sa generati factura?", "Generare Factura", JOptionPane.YES_NO_OPTION)==0){
+            if(JOptionPane.showConfirmDialog((Component) e.getSource(), "Suntenti sigur/a ca vreti sa adaugati concediul?", "Concediu", JOptionPane.YES_NO_OPTION)==0){
                 String data_start=appView2.getUiPanel().getCautaAngajatCard().getVeziAngajatPanel().getConcediuPanel().getDatePicker1();
                 String data_stop=appView2.getUiPanel().getCautaAngajatCard().getVeziAngajatPanel().getConcediuPanel().getDatePicker2();
                 String id_angajat=appView2.getUiPanel().getCautaAngajatCard().getVeziAngajatPanel().getShowUserVeziAngajatPanel().getIdAngajat();
@@ -915,26 +930,144 @@ public class AppController2 {
                     JOptionPane.INFORMATION_MESSAGE);
         }
     }
-//    class SelectUnitateListener implements ActionListener{
-//        @Override
-//        public void actionPerformed(ActionEvent e) {
-//            appView2.getCabinetePanel().getAdaugaStergeCabinete().next();
-//        }
-//    }
-//    class StergeCabinetListener implements ActionListener{
-//        @Override
-//        public void actionPerformed(ActionEvent e) {
-//            JButton jButton= (JButton) e.getSource();
-//            CabinetField cabinetField=(CabinetField)jButton.getParent();
-//            app.stergeCabinet(cabinetField.getId());
-//            appView2.getCabinetePanel().getAdaugaStergeCabinete().getCabinete().resetContent();
-//        }
-//    }
-//    class AdaugaCabinetTabListener implements ActionListener{
-//        @Override
-//        public void actionPerformed(ActionEvent e) {
-//            appView2.getCabinetePanel().getAdaugaStergeCabinete().next();
-//        }
-//    }
-//    class
+    class VeziCabineteListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().showResult(
+                  app.getCabinete()
+            );
+        }
+    }
+    class StergeCabinetListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            JButton jButton= (JButton) e.getSource();
+            CabinetField cabinetField=(CabinetField)jButton.getParent();
+            app.stergeCabinet(cabinetField.getId());
+            appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().resetContent();
+        }
+    }
+    class CabineteListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            appView2.getUiPanel().getCabinetePanel().showCabinete();
+        }
+    }
+    class CabineteBackListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            appView2.getUiPanel().getCabinetePanel().backCabinete();
+        }
+    }
+    class AdaugaCabinetListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().showAdaugaCabinet();
+            appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().setUnitati(app.getUnitati());
+        }
+    }
+    class VeziAdaugaCabineteListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().showResultServicii(
+                    app.getServiciiAdaugaCabinete(appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().getUnitatiComboBox())
+            );
+        }
+    }
+    class RepartizareListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            appView2.getUiPanel().getCabinetePanel().showRepartizare();
+            List<RepartizareField>list=app.getRepartizari();
+            if(list.get(0).isTip()){
+                appView2.getUiPanel().getCabinetePanel().getRepartizarePanel().showResult(list);
+            }else {
+                String query = "";
+                for (int i = 0; i < list.size(); i++) {
+                    query = query + " " + list.get(0).getServiciu();
+                }
+                JOptionPane.showMessageDialog(appView2,
+                        "Servicii necesare: " + query,
+                        "Eroare",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    class BackRepartizariListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+            appView2.getUiPanel().getCabinetePanel().backCabinete();
+            appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().showCabinete();
+        }
+
+    }
+    class ConfirmCabinetListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            List<ServiciuField>list=appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().getList();
+            String id_unitate=appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().getUnitatiComboBox();
+            app.addCabinet(id_unitate,list);
+            appView2.getUiPanel().getCabinetePanel().backCabinete();
+            appView2.getUiPanel().getCabinetePanel().getAdaugaStergeCabinete().showCabinete();
+        }
+    }
+    class RecuzitaListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            appView2.getUiPanel().getCabinetePanel().showRecuzita();
+            appView2.getUiPanel().getCabinetePanel().getRecuzitaPanel().showResult(
+                    app.getRecuzita()
+            );
+        }
+    }
+    class SelectRecuzitaListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            String result = (String)JOptionPane.showInputDialog(
+                    appView2,
+                    "Recuzita noua",
+                    "Recuzita",
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    null,
+                    "Denumire"
+            );
+            RecuzitaField recuzitaField= (RecuzitaField) ((Component)e.getSource()).getParent();
+            String id_serviciu=recuzitaField.getIdServiciu();
+            if(result != null && result.length() > 0){
+                app.addRecuzita(id_serviciu,result);
+                JOptionPane.showMessageDialog(appView2,
+                        "Adaugat cu succes.",
+                        "STATUS",
+                        JOptionPane.INFORMATION_MESSAGE);
+                appView2.getUiPanel().getCabinetePanel().showRecuzita();
+                appView2.getUiPanel().getCabinetePanel().getRecuzitaPanel().showResult(
+                        app.getRecuzita()
+                );
+            }
+        }
+    }
+    class DeleteRecuzitaListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            RecuzitaField recuzitaField= (RecuzitaField) ((Component)e.getSource()).getParent();
+            String id_recuzita=recuzitaField.getId_recuzita();
+            app.deleteRecuzita(id_recuzita);
+            appView2.getUiPanel().getCabinetePanel().showRecuzita();
+            appView2.getUiPanel().getCabinetePanel().getRecuzitaPanel().showResult(
+                    app.getRecuzita()
+            );
+        }
+    }
+    class DeleteConcediuListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            ConcediuField concediuField=(ConcediuField) ((Component)e.getSource()).getParent();
+            String id_angajat=concediuField.getId_angajat();
+            String data_concediu=concediuField.getZi_concediu();
+            app.deleteConcediu(id_angajat,data_concediu);
+            appView2.getUiPanel().getCautaAngajatCard().getVeziAngajatPanel().getConcediuPanel().resetContent();
+        }
+    }
 }
